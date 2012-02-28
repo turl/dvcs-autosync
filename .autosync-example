@@ -86,7 +86,7 @@ movecmd = git rm %s
 startupcmd = git add -A
 commitcmd = git commit -m %s
 pushcmd = git push
-pullcmd = git pull
+pullcmd = git pull -Xours
 remoteurlcmd = git config --get remote.origin.url
 
 # for mercurial

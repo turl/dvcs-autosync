@@ -332,12 +332,23 @@ class FileChangeHandler():
         printmsg('Pushing changes', 'Pushing last local changes to remote repository %s' % remoteurl)
         
         with lock:
-            # TODO: check if we actually need a pull or a check-for-pull here 
-            # or if all race conditions were already ruled out
-            # if we need a check-for-pull, then something like 
-            #    git fetch --dry-run | grep "Unpacking objects:
-            # might help
-            #self.protected_pull()
+            # A race condition might happen if
+            #----------------------------------------------------------
+            #       USER A              |    USER B                   |
+            #----------------------------------------------------------
+            #                           |  pull                       |
+            #                           |  change, commit, timer      |
+            #  change, commit, timer    |  ...                        |
+            #  ...                      |  ...                        |
+            #  ...                      |  push triggered             |
+            #  push triggered, ERROR *  |  *pull alert*               |
+            #  pull, merges **          |                             |
+            #----------------------------------------------------------
+            # 
+            # So do a pull here, with "-X ours" on git or equivalent,
+            # to keep any possible changes and not fail when pushing.
+            #
+            self.protected_pull()
             self._exec_cmd(cmds['push'])
 
         # and try to notify other instances
